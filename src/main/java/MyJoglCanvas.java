@@ -24,6 +24,7 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
     private GLU glu;
     private FPSAnimator animator;
     private float angle = 0.f;
+    private int listId;
 
     public MyJoglCanvas(final int width, final int height, final GLCapabilities capabilities) {
         super(capabilities);
@@ -45,6 +46,10 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
         this.animator = new FPSAnimator(this, FPS, true);
         this.animator.start();
         this.glu = GLU.createGLU();
+        this.listId = gl.glGenLists(1);
+        gl.glNewList(this.listId, GL2.GL_COMPILE);
+            triangle(gl);
+        gl.glEndList();
         System.out.println("Init ready");
     }
 
@@ -81,7 +86,7 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
         gl.glLoadIdentity();
         gl.glTranslatef(0.0f, 0.0f, -6.0f);
         gl.glRotatef(this.angle, 0.0f, 1.0f, 0.0f);
-        triangle(gl);
+        gl.glCallList(this.listId);
         this.angle += 0.2f;
     }
 
