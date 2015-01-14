@@ -1,6 +1,7 @@
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.nio.FloatBuffer;
 
 import javax.media.opengl.DebugGL2;
 import javax.media.opengl.GL;
@@ -23,8 +24,9 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
     private static final int FPS = 60;
     private GLU glu;
     private FPSAnimator animator;
-    private float angle = 0.f;
+    private float angle;
     private int listId;
+    private int program;
 
     public MyJoglCanvas(final int width, final int height, final GLCapabilities capabilities) {
         super(capabilities);
@@ -36,10 +38,10 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
     @Override
     public void init(final GLAutoDrawable drawable) {
         final GL2 gl = drawable.getGL().getGL2();
-        drawable.setGL(new DebugGL2(gl));
+        //drawable.setGL(new DebugGL2(gl));
         gl.glEnable(GL.GL_DEPTH_TEST);
         gl.glDepthFunc(GL.GL_LEQUAL);
-        gl.glShadeModel(GLLightingFunc.GL_SMOOTH);
+        //gl.glShadeModel(GLLightingFunc.GL_SMOOTH);
         gl.glHint(GL2ES1.GL_PERSPECTIVE_CORRECTION_HINT, GL.GL_NICEST);
         gl.glClearColor(0f, 0f, 0f, 1f);
         gl.glClearDepth(1f);
@@ -50,11 +52,34 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
         gl.glNewList(this.listId, GL2.GL_COMPILE);
             triangle(gl);
         gl.glEndList();
+        setupShader(gl);
         System.out.println("Init ready");
+    }
+
+    private void setupShader(final GL2 gl) {
+        final int shader = ShaderUtils.loadVertexShaderFromFile(gl, "src/main/resource/shaders/3lights.vs");
+        final FloatBuffer tLightPos0 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.0f, 30.0f, 30.0f,0.0f});
+        final FloatBuffer tLightPos1 = DirectBufferUtils.createDirectFloatBuffer(new float[]{30.0f, 30.0f, 0.0f,0.0f});
+        final FloatBuffer tLightPos2 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.0f,-30.0f,-30.0f,0.0f});
+        final FloatBuffer tLightCol0 = DirectBufferUtils.createDirectFloatBuffer(new float[]{1.0f, 0.25f, 0.25f, 1.0f});
+        final FloatBuffer tLightCol1 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.25f, 1.0f, 0.25f, 1.0f});
+        final FloatBuffer tLightCol2 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.25f, 0.25f, 1.0f, 1.0f});
+        this.program = ShaderUtils.generateSimple_1xFS_OR_1xVS_ShaderProgramm(gl, shader);
+        gl.glUseProgram(this.program);
+        ShaderUtils.setUniform3fv(gl, this.program, "lightPos[0]", tLightPos0);
+        ShaderUtils.setUniform3fv(gl, this.program, "lightPos[1]", tLightPos1);
+        ShaderUtils.setUniform3fv(gl, this.program, "lightPos[2]", tLightPos2);
+        ShaderUtils.setUniform4fv(gl, this.program, "lightCol[0]", tLightCol0);
+        ShaderUtils.setUniform4fv(gl, this.program, "lightCol[1]", tLightCol1);
+        ShaderUtils.setUniform4fv(gl, this.program, "lightCol[2]", tLightCol2);
+        gl.glUseProgram(0);
     }
 
     @Override
     public void dispose(final GLAutoDrawable glAutoDrawable) {
+        final GL2 gl = glAutoDrawable.getGL().getGL2();
+        gl.glDeleteLists(this.listId, 1);
+        gl.glDeleteProgram(this.program);
     }
 
     public void stop() {
@@ -86,7 +111,9 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
         gl.glLoadIdentity();
         gl.glTranslatef(0.0f, 0.0f, -6.0f);
         gl.glRotatef(this.angle, 0.0f, 1.0f, 0.0f);
+        gl.glUseProgram(this.program);
         gl.glCallList(this.listId);
+        gl.glUseProgram(0);
         this.angle += 0.2f;
     }
 
