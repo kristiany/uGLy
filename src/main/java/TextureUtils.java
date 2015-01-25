@@ -29,6 +29,19 @@ import static javax.media.opengl.GL2.*;
 
 public class TextureUtils {
 
+    public static Texture loadImageAsTexture(final GL2 inGL, final String inFileName) {
+        System.out.println("LOADING IMAGE FILE "+inFileName+" AS TEXTURE UNFLIPPED ...");
+        try {
+            final Texture tTexture = TextureIO.newTexture(new BufferedInputStream(new FileInputStream(inFileName)),true,null);
+            System.out.println("TEXTURE " + inFileName + " (" + tTexture.getWidth() + "x" + tTexture.getWidth() + " AUTOMIPMAPS:" + tTexture
+                    .isUsingAutoMipmapGeneration() + ") LOADED! ESTIMATED MEMORY SIZE: " + tTexture.getEstimatedMemorySize());
+            return tTexture;
+        } catch (final Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Texture loadImageAsTexture_UNMODIFIED(final GL2 inGL, final String inFileName) {
         System.out.println("LOADING IMAGE FILE "+inFileName+" AS TEXTURE UNFLIPPED ...");
         //kinda 'soften' exception-handling ... -:-)
@@ -217,7 +230,7 @@ public class TextureUtils {
 
     public static byte[] readRawFileAsByteArray(final String inFilename) {
         try {
-            final InputStream tInputStream = (new Object()).getClass().getResourceAsStream(inFilename);
+            final InputStream tInputStream = new FileInputStream(inFilename);
             final ByteArrayOutputStream tByteArrayOutputStream = new ByteArrayOutputStream(4096);
             final byte [] tBuffer = new byte [1024];
             int tBytesRead;

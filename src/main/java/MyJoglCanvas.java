@@ -7,7 +7,6 @@ import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL2ES1;
 import javax.media.opengl.GL2ES2;
-import javax.media.opengl.GL2GL3;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLEventListener;
@@ -55,8 +54,9 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
         this.animator.start();
         this.glu = GLU.createGLU();
         this.listId = gl.glGenLists(1);
+        final Land land = new Land("src/main/resource/maps/land4X64-1024.bmp", 1024, 1024, 100.f, 100.f);
         gl.glNewList(this.listId, GL2.GL_COMPILE);
-            land(gl);
+            land.registerDisplayList(gl);
         gl.glEndList();
         setupShaders(gl);
         System.out.println("Init ready");
@@ -72,7 +72,7 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
     private void setupShaders(final GL2 gl) {
         final int vshader = ShaderUtils.loadVertexShaderFromFile(gl, "src/main/resource/shaders/3lights.vs");
         final int fshader = ShaderUtils.loadFragmentShaderFromFile(gl, "src/main/resource/shaders/surface.fs");
-        this.texture = TextureUtils.loadImageAsTexture_FLIPPED(gl, "src/main/resource/textures/land.bmp");
+        this.texture = TextureUtils.loadImageAsTexture_UNMODIFIED(gl, "src/main/resource/textures/land.bmp");
         /*final FloatBuffer tLightPos0 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.0f, 30.0f, 30.0f,0.0f});
         final FloatBuffer tLightPos1 = DirectBufferUtils.createDirectFloatBuffer(new float[]{30.0f, 30.0f, 0.0f,0.0f});
         final FloatBuffer tLightPos2 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.0f,-30.0f,-30.0f,0.0f});
@@ -126,7 +126,8 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
         setCamera(gl, this.glu, 20);
         gl.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
         gl.glLoadIdentity();
-        gl.glTranslatef(-10.0f, -10.0f, -30.0f);
+        gl.glTranslatef(-50.0f, -30.0f, -200.0f);
+        gl.glRotatef(10.5f, 1.0f, 0.0f, 0.0f);
         //gl.glRotatef(this.angle, 0.0f, 1.0f, 0.0f);
         gl.glUseProgram(this.program);
         gl.glActiveTexture(GL.GL_TEXTURE0);
@@ -137,19 +138,6 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
         this.texture.disable(gl);
         gl.glUseProgram(0);
         //this.angle += 0.2f;
-    }
-
-    private void land(final GL2 gl) {
-        gl.glBegin(GL2GL3.GL_QUADS);
-        gl.glVertex3f(0, 0, 0);
-        gl.glTexCoord2f(0.f, 0.f);
-        gl.glVertex3f(20, 0, 0);
-        gl.glTexCoord2f(1.f, 0.f);
-        gl.glVertex3f(20, 0, 20);
-        gl.glTexCoord2f(1.f, 1.f);
-        gl.glVertex3f(0, 0, 20);
-        gl.glTexCoord2f(0.f, 1.f);
-        gl.glEnd();
     }
 
     private void setCamera(final GL gl, final GLU glu, final float distance) {
