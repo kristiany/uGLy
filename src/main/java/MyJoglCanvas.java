@@ -3,10 +3,11 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.nio.FloatBuffer;
 
-import javax.media.opengl.DebugGL2;
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL2ES1;
+import javax.media.opengl.GL2ES2;
+import javax.media.opengl.GL2GL3;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLEventListener;
@@ -19,6 +20,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import com.jogamp.opengl.util.FPSAnimator;
+import com.jogamp.opengl.util.texture.Texture;
 
 public class MyJoglCanvas extends GLJPanel implements GLEventListener {
     private static final int FPS = 60;
@@ -27,6 +29,8 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
     private float angle;
     private int listId;
     private int program;
+    private Texture texture;
+    private int timeRef;
 
     public MyJoglCanvas(final int width, final int height, final GLCapabilities capabilities) {
         super(capabilities);
@@ -38,40 +42,53 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
     @Override
     public void init(final GLAutoDrawable drawable) {
         final GL2 gl = drawable.getGL().getGL2();
-        //drawable.setGL(new DebugGL2(gl));
+        System.out.println("GLSL version: " + gl.glGetString(GL2ES2.GL_SHADING_LANGUAGE_VERSION));
+        gl.glEnable(GL.GL_TEXTURE_2D);
+        gl.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
         gl.glEnable(GL.GL_DEPTH_TEST);
         gl.glDepthFunc(GL.GL_LEQUAL);
-        //gl.glShadeModel(GLLightingFunc.GL_SMOOTH);
         gl.glHint(GL2ES1.GL_PERSPECTIVE_CORRECTION_HINT, GL.GL_NICEST);
         gl.glClearColor(0f, 0f, 0f, 1f);
         gl.glClearDepth(1f);
+        setLight(gl);
         this.animator = new FPSAnimator(this, FPS, true);
         this.animator.start();
         this.glu = GLU.createGLU();
         this.listId = gl.glGenLists(1);
         gl.glNewList(this.listId, GL2.GL_COMPILE);
-            triangle(gl);
+            land(gl);
         gl.glEndList();
-        setupShader(gl);
+        setupShaders(gl);
         System.out.println("Init ready");
     }
 
-    private void setupShader(final GL2 gl) {
-        final int shader = ShaderUtils.loadVertexShaderFromFile(gl, "src/main/resource/shaders/3lights.vs");
-        final FloatBuffer tLightPos0 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.0f, 30.0f, 30.0f,0.0f});
+    private void setLight(final GL2 gl) {
+        final FloatBuffer lightPos0 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.0f, 100.0f, 100.0f, 0.0f}); // direction light
+        gl.glLightfv(GLLightingFunc.GL_LIGHT0, GLLightingFunc.GL_POSITION, lightPos0);
+        gl.glEnable(GLLightingFunc.GL_LIGHTING);
+        gl.glEnable(GLLightingFunc.GL_LIGHT0);
+    }
+
+    private void setupShaders(final GL2 gl) {
+        final int vshader = ShaderUtils.loadVertexShaderFromFile(gl, "src/main/resource/shaders/3lights.vs");
+        final int fshader = ShaderUtils.loadFragmentShaderFromFile(gl, "src/main/resource/shaders/surface.fs");
+        this.texture = TextureUtils.loadImageAsTexture_FLIPPED(gl, "src/main/resource/textures/land.bmp");
+        /*final FloatBuffer tLightPos0 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.0f, 30.0f, 30.0f,0.0f});
         final FloatBuffer tLightPos1 = DirectBufferUtils.createDirectFloatBuffer(new float[]{30.0f, 30.0f, 0.0f,0.0f});
         final FloatBuffer tLightPos2 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.0f,-30.0f,-30.0f,0.0f});
         final FloatBuffer tLightCol0 = DirectBufferUtils.createDirectFloatBuffer(new float[]{1.0f, 0.25f, 0.25f, 1.0f});
         final FloatBuffer tLightCol1 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.25f, 1.0f, 0.25f, 1.0f});
-        final FloatBuffer tLightCol2 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.25f, 0.25f, 1.0f, 1.0f});
-        this.program = ShaderUtils.generateSimple_1xFS_OR_1xVS_ShaderProgramm(gl, shader);
+        final FloatBuffer tLightCol2 = DirectBufferUtils.createDirectFloatBuffer(new float[]{0.25f, 0.25f, 1.0f, 1.0f});*/
+        this.program = ShaderUtils.generateSimple_1xVS_1xFS_ShaderProgramm(gl, vshader, fshader);
         gl.glUseProgram(this.program);
-        ShaderUtils.setUniform3fv(gl, this.program, "lightPos[0]", tLightPos0);
+        /*ShaderUtils.setUniform3fv(gl, this.program, "lightPos[0]", tLightPos0);
         ShaderUtils.setUniform3fv(gl, this.program, "lightPos[1]", tLightPos1);
         ShaderUtils.setUniform3fv(gl, this.program, "lightPos[2]", tLightPos2);
         ShaderUtils.setUniform4fv(gl, this.program, "lightCol[0]", tLightCol0);
         ShaderUtils.setUniform4fv(gl, this.program, "lightCol[1]", tLightCol1);
-        ShaderUtils.setUniform4fv(gl, this.program, "lightCol[2]", tLightCol2);
+        ShaderUtils.setUniform4fv(gl, this.program, "lightCol[2]", tLightCol2);*/
+        ShaderUtils.setSampler2DUniformOnTextureUnit(gl, this.program, "sampler0", this.texture, GL.GL_TEXTURE0, 0);
+        this.timeRef = gl.glGetUniformLocation(this.program, "time");
         gl.glUseProgram(0);
     }
 
@@ -106,24 +123,32 @@ public class MyJoglCanvas extends GLJPanel implements GLEventListener {
     @Override
     public void display(final GLAutoDrawable drawable) {
         final GL2 gl = drawable.getGL().getGL2();
-        setCamera(gl, this.glu, 100);
+        setCamera(gl, this.glu, 20);
         gl.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
         gl.glLoadIdentity();
-        gl.glTranslatef(0.0f, 0.0f, -6.0f);
-        gl.glRotatef(this.angle, 0.0f, 1.0f, 0.0f);
+        gl.glTranslatef(-10.0f, -10.0f, -30.0f);
+        //gl.glRotatef(this.angle, 0.0f, 1.0f, 0.0f);
         gl.glUseProgram(this.program);
+        gl.glActiveTexture(GL.GL_TEXTURE0);
+        this.texture.enable(gl);
+        this.texture.bind(gl);
+        gl.glUniform1f(this.timeRef, this.angle);
         gl.glCallList(this.listId);
+        this.texture.disable(gl);
         gl.glUseProgram(0);
-        this.angle += 0.2f;
+        //this.angle += 0.2f;
     }
 
-    private void triangle(final GL2 gl) {
-        gl.glColor3f(0.9f, 0.5f, 0.2f);
-        gl.glBegin(GL.GL_TRIANGLE_FAN);
-        gl.glVertex3f(-20, -20, 0);
-        gl.glVertex3f(+20, -20, 0);
-        gl.glColor3f(0.7f, 0.3f, 0.1f);
-        gl.glVertex3f(0, 20, 0);
+    private void land(final GL2 gl) {
+        gl.glBegin(GL2GL3.GL_QUADS);
+        gl.glVertex3f(0, 0, 0);
+        gl.glTexCoord2f(0.f, 0.f);
+        gl.glVertex3f(20, 0, 0);
+        gl.glTexCoord2f(1.f, 0.f);
+        gl.glVertex3f(20, 0, 20);
+        gl.glTexCoord2f(1.f, 1.f);
+        gl.glVertex3f(0, 0, 20);
+        gl.glTexCoord2f(0.f, 1.f);
         gl.glEnd();
     }
 

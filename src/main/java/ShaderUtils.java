@@ -18,6 +18,8 @@ import java.io.*;
 import java.nio.*;
 import javax.media.opengl.*;
 import com.jogamp.common.nio.*;
+import com.jogamp.opengl.util.texture.Texture;
+
 import static javax.media.opengl.GL3bc.*;
 
 public class ShaderUtils {
@@ -158,5 +160,18 @@ public class ShaderUtils {
         } else {
             System.err.println("UNIFORM COULD NOT BE FOUND! NAME="+inName);
         }
+    }
+
+    public static void setSampler2DUniformOnTextureUnit(final GL2 inGL,
+                                                        final int inProgramID,
+                                                        final String inSamplerUniformName,
+                                                        final Texture inTexture,
+                                                        final int inTextureUnit,
+                                                        final int inTextureUnitNumber) {
+        inGL.glActiveTexture(inTextureUnit);
+        inTexture.enable(inGL);
+        inTexture.bind(inGL);
+        ShaderUtils.setUniform1i(inGL,inProgramID,inSamplerUniformName,inTextureUnitNumber);
+        //inTexture.disable(inGL);
     }
 }
