@@ -11,7 +11,7 @@ public class Land {
     private final float worldDepth;
     private final int listId;
     private int program;
-    private Texture texture;
+    private final Texture texture;
     private int vertexShader;
     private int fragmentShader;
 
@@ -30,6 +30,9 @@ public class Land {
         gl.glNewList(this.listId, GL2.GL_COMPILE);
             registerDisplayList(gl);
         gl.glEndList();
+        gl.glActiveTexture(GL.GL_TEXTURE0);
+        this.texture = TextureUtils.loadImageAsTexture_UNMODIFIED(gl, "src/main/resource/textures/land.bmp");
+        this.texture.bind(gl);
         setupShaders(gl);
     }
 
@@ -43,9 +46,7 @@ public class Land {
 
     public void draw(final GL2 gl) {
         gl.glUseProgram(this.program);
-        gl.glActiveTexture(GL.GL_TEXTURE0);
         this.texture.enable(gl);
-        this.texture.bind(gl);
         gl.glCallList(this.listId);
         this.texture.disable(gl);
         gl.glUseProgram(0);
@@ -54,7 +55,6 @@ public class Land {
     private void setupShaders(final GL2 gl) {
         this.vertexShader = ShaderUtils.loadVertexShaderFromFile(gl, "src/main/resource/shaders/3lights.vs");
         this.fragmentShader = ShaderUtils.loadFragmentShaderFromFile(gl, "src/main/resource/shaders/surface.fs");
-        this.texture = TextureUtils.loadImageAsTexture_UNMODIFIED(gl, "src/main/resource/textures/land.bmp");
         this.program = ShaderUtils.generateSimple_1xVS_1xFS_ShaderProgramm(gl, this.vertexShader, this.fragmentShader);
         gl.glUseProgram(this.program);
         ShaderUtils.setSampler2DUniformOnTextureUnit(gl, this.program, "sampler0", this.texture, GL.GL_TEXTURE0, 0);
