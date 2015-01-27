@@ -1,14 +1,22 @@
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 
+import com.jogamp.opengl.util.texture.Texture;
+
 public class Land {
     private final String heightMapFilename;
     private final int vertexWidth;
     private final int vertexDepth;
     private final float worldWidth;
     private final float worldDepth;
+    private final int listId;
+    private int program;
+    private Texture texture;
+    private int vertexShader;
+    private int fragmentShader;
 
-    public Land(final String heightMapFilename,
+    public Land(final GL2 gl,
+                final String heightMapFilename,
                 final int vertexWidth,
                 final int vertexDepth,
                 final float worldWidth,
@@ -18,9 +26,42 @@ public class Land {
         this.vertexDepth = vertexDepth;
         this.worldWidth = worldWidth;
         this.worldDepth = worldDepth;
+        this.listId = gl.glGenLists(1);
+        gl.glNewList(this.listId, GL2.GL_COMPILE);
+            registerDisplayList(gl);
+        gl.glEndList();
+        setupShaders(gl);
     }
 
-    public void registerDisplayList(final GL2 gl) {
+    public void dispose(final GL2 gl) {
+        gl.glDeleteLists(this.listId, 1);
+        gl.glDeleteShader(this.vertexShader);
+        gl.glDeleteShader(this.fragmentShader);
+        gl.glDeleteProgram(this.program);
+        gl.glDeleteTextures(1, new int[]{ GL.GL_TEXTURE0 }, 0);
+    }
+
+    public void draw(final GL2 gl) {
+        gl.glUseProgram(this.program);
+        gl.glActiveTexture(GL.GL_TEXTURE0);
+        this.texture.enable(gl);
+        this.texture.bind(gl);
+        gl.glCallList(this.listId);
+        this.texture.disable(gl);
+        gl.glUseProgram(0);
+    }
+
+    private void setupShaders(final GL2 gl) {
+        this.vertexShader = ShaderUtils.loadVertexShaderFromFile(gl, "src/main/resource/shaders/3lights.vs");
+        this.fragmentShader = ShaderUtils.loadFragmentShaderFromFile(gl, "src/main/resource/shaders/surface.fs");
+        this.texture = TextureUtils.loadImageAsTexture_UNMODIFIED(gl, "src/main/resource/textures/land.bmp");
+        this.program = ShaderUtils.generateSimple_1xVS_1xFS_ShaderProgramm(gl, this.vertexShader, this.fragmentShader);
+        gl.glUseProgram(this.program);
+        ShaderUtils.setSampler2DUniformOnTextureUnit(gl, this.program, "sampler0", this.texture, GL.GL_TEXTURE0, 0);
+        gl.glUseProgram(0);
+    }
+
+    private void registerDisplayList(final GL2 gl) {
         final float widthVertexStep = this.worldWidth / this.vertexWidth;
         final float depthVertexStep = this.worldDepth / this.vertexDepth;
         final float widthTextureStep = 1.f / this.vertexWidth;
