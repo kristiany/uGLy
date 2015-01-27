@@ -14,7 +14,6 @@ import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLJPanel;
 import javax.media.opengl.fixedfunc.GLLightingFunc;
 import javax.media.opengl.fixedfunc.GLMatrixFunc;
-import javax.media.opengl.glu.GLU;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -22,17 +21,16 @@ import com.jogamp.opengl.util.FPSAnimator;
 
 public class WorldOfWaves extends GLJPanel implements GLEventListener {
     private static final int FPS = 60;
-    private GLU glu;
     private FPSAnimator animator;
     private float angle;
     private int timeRef;
     private Land land;
+    private Camera camera;
 
     public WorldOfWaves(final int width, final int height, final GLCapabilities capabilities) {
         super(capabilities);
         setPreferredSize(new Dimension(width, height));
         this.addGLEventListener(this);
-        this.addKeyListener(new KeyActionListener(this::stop));
     }
 
     @Override
@@ -49,8 +47,10 @@ public class WorldOfWaves extends GLJPanel implements GLEventListener {
         setLight(gl);
         this.animator = new FPSAnimator(this, FPS, true);
         this.animator.start();
-        this.glu = GLU.createGLU();
         this.land = new Land(gl, "src/main/resource/maps/land4X64-1024.bmp", 1024, 1024, 100.f, 100.f);
+        this.camera = new Camera();
+        this.camera.setPerspective(gl, getWidth(), getHeight());
+        this.addKeyListener(new KeyActionListener(this::stop, this.camera));
         System.out.println("Init ready");
     }
 
@@ -76,40 +76,21 @@ public class WorldOfWaves extends GLJPanel implements GLEventListener {
 
     @Override
     public void reshape(final GLAutoDrawable drawable, final int x, final int y, final int width, final int height) {
-        drawable.getGL().glViewport(0, 0, width, height);
         final GL2 gl = drawable.getGL().getGL2();
-        final float aspect = height > 0 ? (float)width / height : width;
         gl.glViewport(0, 0, width, height);
-        // Setup perspective projection, with aspect ratio matches viewport
-        gl.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
-        gl.glLoadIdentity();
-        this.glu.gluPerspective(45.0, aspect, 0.1, 100.0);
-        gl.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
-        gl.glLoadIdentity();
+        this.camera.setPerspective(gl, width, height);
     }
 
     @Override
     public void display(final GLAutoDrawable drawable) {
         final GL2 gl = drawable.getGL().getGL2();
-        setCamera(gl, this.glu, 20);
-        gl.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
         gl.glLoadIdentity();
-        gl.glTranslatef(-50.0f, -30.0f, -200.0f);
-        gl.glRotatef(10.5f, 1.0f, 0.0f, 0.0f);
+        gl.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
+        this.camera.update(gl);
         //gl.glRotatef(this.angle, 0.0f, 1.0f, 0.0f);
         //gl.glUniform1f(this.timeRef, this.angle);
         //this.angle += 0.2f;
         this.land.draw(gl);
-    }
-
-    private void setCamera(final GL gl, final GLU glu, final float distance) {
-        gl.getGL2().glMatrixMode(GLMatrixFunc.GL_PROJECTION);
-        gl.getGL2().glLoadIdentity();
-        final float widthHeightRatio = (float) getWidth() / (float) getHeight();
-        glu.gluPerspective(45, widthHeightRatio, 1, 1000);
-        glu.gluLookAt(0, 0, distance, 0, 0, 0, 0, 1, 0);
-        gl.getGL2().glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
-        gl.getGL2().glLoadIdentity();
     }
 
     public static void main(final String[] args) {

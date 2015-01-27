@@ -4,9 +4,11 @@ import java.awt.event.KeyListener;
 public class KeyActionListener implements KeyListener {
 
     private final Action onClose;
+    private final Camera camera;
 
-    public KeyActionListener(final Action onClose) {
+    public KeyActionListener(final Action onClose, final Camera camera) {
         this.onClose = onClose;
+        this.camera = camera;
     }
 
     @Override
@@ -26,6 +28,24 @@ public class KeyActionListener implements KeyListener {
                         System.exit(0);
                     }
                 }.start();
+                break;
+            case KeyEvent.VK_W:
+                this.camera.moveForward(Camera.DEFAULT_SPEED);
+                break;
+            case KeyEvent.VK_S:
+                this.camera.moveBackward(Camera.DEFAULT_SPEED);
+                break;
+            case KeyEvent.VK_A:
+                this.camera.moveLeft(Camera.DEFAULT_SPEED);
+                break;
+            case KeyEvent.VK_D:
+                this.camera.moveRight(Camera.DEFAULT_SPEED);
+                break;
+            case KeyEvent.VK_Q:
+                this.camera.moveUp(Camera.DEFAULT_SPEED);
+                break;
+            case KeyEvent.VK_Z:
+                this.camera.moveDown(Camera.DEFAULT_SPEED);
                 break;
         }
     }
