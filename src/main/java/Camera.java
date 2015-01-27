@@ -41,12 +41,6 @@ public class Camera {
         gl.glRotatef(this.rotation.y, 1.f, 0.f, 0.f); // up/down
         gl.glRotatef(this.rotation.x, 0.f, 1.f, 0.f); // left/right
         gl.glTranslatef(-this.position.x, -this.position.y, -this.position.z);
-
-        /*gl.getGL2().glMatrixMode(GLMatrixFunc.GL_PROJECTION);
-        gl.getGL2().glLoadIdentity();
-        glu.gluLookAt(0, 0, distance, 0, 0, 0, 0, 1, 0);
-        gl.getGL2().glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
-        gl.getGL2().glLoadIdentity();*/
     }
 
     public void moveForward(final float speed) {
