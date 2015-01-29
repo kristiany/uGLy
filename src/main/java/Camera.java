@@ -75,10 +75,10 @@ public class Camera {
         this.position.y -= speed;
     }
 
-    public void rotate(final Tuple3f rotation) {
-        float x = rotation.x;
-        float y = rotation.y;
-        float z = rotation.z;
+    public void rotate(final float xadd, final float yadd, final float zadd) {
+        float x = xadd;
+        float y = yadd;
+        float z = zadd;
         if(x > FULL || x < -FULL) {
             x = ZERO;
         }

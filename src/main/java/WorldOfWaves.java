@@ -13,7 +13,6 @@ import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLJPanel;
 import javax.media.opengl.fixedfunc.GLLightingFunc;
-import javax.media.opengl.fixedfunc.GLMatrixFunc;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -51,6 +50,7 @@ public class WorldOfWaves extends GLJPanel implements GLEventListener {
         this.camera = new Camera();
         this.camera.setPerspective(gl, getWidth(), getHeight());
         this.addKeyListener(new KeyActionListener(this::stop, this.camera));
+        this.addMouseMotionListener(new MouseActionListener(this.camera));
         System.out.println("Init ready");
     }
 
@@ -100,7 +100,7 @@ public class WorldOfWaves extends GLJPanel implements GLEventListener {
         capabilities.setGreenBits(8);
         capabilities.setAlphaBits(8);
         SwingUtilities.invokeLater(() -> {
-            final WorldOfWaves canvas = new WorldOfWaves(500, 500, capabilities);
+            final WorldOfWaves canvas = new WorldOfWaves(800, 500, capabilities);
             final JFrame frame = new JFrame();
             frame.getContentPane().add(canvas);
             frame.addWindowListener(new WindowAdapter() {
